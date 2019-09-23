@@ -29,5 +29,6 @@
         <activity android:name=".DeviceScanActivity" />
         <activity android:name=".DeviceControlActivity"/>
         <service android:name=".BluetoothLeService" android:enabled="true"/>
+        <service android:name=".BeaconingService" android:enabled="true"/>
     </application>
 </manifest>
