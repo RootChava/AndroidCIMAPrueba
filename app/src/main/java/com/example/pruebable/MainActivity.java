@@ -1,22 +1,7 @@
 package com.example.pruebable;
 
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.content.ContextCompat;
-
 import android.Manifest;
-import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.bluetooth.le.BluetoothLeScanner;
-import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanResult;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -24,15 +9,18 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.ParcelUuid;
 import android.util.Log;
 import android.widget.Toast;
 
-import java.util.UUID;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 public class MainActivity extends AppCompatActivity {
     private Handler mHandler;
     private final static int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    private Intent intent;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -50,10 +38,31 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
                     finish();
                 }
-                Intent intent = new Intent(this, BeaconingService.class);
-                startService(intent);
+                intent = new Intent(this, BeaconingService.class);
+                if(!isMyServiceRunning(BeaconingService.class)) startService(intent);
             }
         }
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                Log.i ("isMyServiceRunning?", true+"");
+                return true;
+            }
+        }
+        Log.i ("isMyServiceRunning?", false+"");
+        return false;
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        stopService(intent);
+        Log.d("INFO: ", "onDestroy!");
+        super.onDestroy();
+
     }
 
     public boolean areLocationServicesEnabled(Context context) {
@@ -65,7 +74,5 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
     }
-
-
 
 }

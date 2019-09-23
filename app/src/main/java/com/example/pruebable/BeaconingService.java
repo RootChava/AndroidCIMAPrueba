@@ -1,6 +1,7 @@
 package com.example.pruebable;
 
 import android.app.IntentService;
+import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -9,7 +10,9 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Build;
+import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.util.Log;
 
@@ -18,7 +21,7 @@ import androidx.annotation.RequiresApi;
 
 import java.util.UUID;
 
-public class BeaconingService extends IntentService {
+public class BeaconingService extends Service {
 
     private boolean mScanning;
     private BluetoothLeScanner bleScanner;
@@ -27,18 +30,37 @@ public class BeaconingService extends IntentService {
     private NotificationHelper notificationHelper;
 
     public BeaconingService() {
-        super("Meh");
+        super();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
-    protected void onHandleIntent(@Nullable Intent intent) {
+    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
         notificationHelper = new NotificationHelper(this);
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
         if (bleScanner == null) bleScanner = mBluetoothAdapter.getBluetoothLeScanner();
-        Log.d("INFO:","Entrando al IntentService...");
+        Log.d("INFO","Entrando al IntentService...");
         scanLeDevice(true);
-        //stopSelf();
+        return START_STICKY;
+    }
+
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d("INFO", "DESTRUYENDO EL SERVICIO");
+        Intent broadcastIntent = new Intent(this, RestartReceiver.class);
+        sendBroadcast(broadcastIntent);
+    }
+
+
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        Log.d("INFO", "ONBIND");
+        return null;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -46,28 +68,28 @@ public class BeaconingService extends IntentService {
         if (enable) {
             Log.d("INFO", "VOY A EMPEZAR A ESCANEAR");
             mScanning = true;
-            bleScanner.startScan(leScanCallback);
-            //mBluetoothAdapter.startLeScan(mLeScanCallback);
+            AsyncTask.execute(new Runnable() {
+                @Override
+                public void run() {
+                    bleScanner.startScan(leScanCallback);
+                }
+            });
         } else {
             bleScanner.stopScan(leScanCallback);
-            /*mScanning = false;
-            mBluetoothAdapter.stopLeScan(mLeScanCallback);
-            stopSelf();
-            scanLeDevice(true);*/
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private ScanCallback leScanCallback = new ScanCallback() {
-        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             BluetoothDevice device = result.getDevice();
             String nombre = device.getName() != null ? device.getName(): "UNKNOWN NAME";
             String address = device.getAddress() != null ? device.getAddress(): "UNKNOWN ADDRESS";
-            if( address.equals("88:15:44:CA:B9:A0") || address.equals("E0:CB:BC:BF:9C:E3")){
+            if( address.equals("88:15:44:CA:B9:A0") || address.equals("E0:CB:BC:BF:9C:E3") || true){
+//            if(true){
                 ParcelUuid[] uuids = device.getUuids() != null ? device.getUuids() : new ParcelUuid[0];
-                //Log.d("INFO: ES CONECTABLE", String.valueOf(result.isConnectable()));
                 Log.d("INFO: NOMBRE", nombre);
                 Log.d("INFO: MAC", address);
                 Log.d("INFO: TOSTRING", result.toString());
@@ -79,56 +101,4 @@ public class BeaconingService extends IntentService {
         }
     };
 
-/*    // Device scan callback.
-    private BluetoothAdapter.LeScanCallback mLeScanCallback =
-            new BluetoothAdapter.LeScanCallback() {
-                @Override
-                public void onLeScan(final BluetoothDevice device, final int rssi,
-                                     final byte[] scanRecord) {
-                    BeaconingService.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            ParcelUuid[] puu = device.getUuids();
-
-                            if( device.getAddress().equals("88:15:44:CA:B9:A0") || device.getAddress().equals("E0:CB:BC:BF:9C:E3")){
-                                Log.d("INFO: ->>>>", device.getAddress());
-                                Log.d("INFO: TIPO", String.valueOf(device.getType()));
-                                for (int x = 0; x < scanRecord.length; x++){
-                                    Log.d("INFO: SCAN RECORDS ", String.valueOf(scanRecord[x]));
-                                }
-                                if(device.getName() != null){
-                                    Log.d("INFO: NOMBRE", device.getName());
-                                }
-                                if(puu != null){
-                                    Log.d("INFO: NEW DEVICE", String.valueOf(puu.length));
-                                    for (int i = 0; i < puu.length; i++){
-                                        Log.d("INFO UID CONTENTS", puu[i].toString());
-                                    }
-                                }
-
-
-//                                Intent intent = new Intent(MainActivity.this, MainActivity.class);
-//                                PendingIntent contentIntent = PendingIntent.getActivity(MainActivity.this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-//                                NotificationCompat.Builder builder = new NotificationCompat.Builder(MainActivity.this, "com.root.pruebable")
-//                                        .setSmallIcon(R.drawable.notification_icon)
-//                                        .setContentTitle(textTitle)
-//                                        .setContentText(textContent)
-//                                        .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-                            }else {
-                                if(device.getName() != null){
-                                    Log.d("INFO: NOMBRE", device.getName());
-                                }
-                                if(puu != null){
-                                    Log.d("INFO: NEW DEVICE", String.valueOf(puu.length));
-                                    for (int i = 0; i > puu.length; i++){
-                                        Log.d("INFO UID CONTENTS", puu[i].toString());
-                                    }
-                                }
-                                Log.d("INFO: RSSI", String.valueOf(rssi));
-                                Log.d("INFO: NEW DEVICE", device.getAddress());
-                            }
-                        }
-                    });
-                }
-            };*/
 }
