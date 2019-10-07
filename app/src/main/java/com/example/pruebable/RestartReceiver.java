@@ -10,6 +10,7 @@ public class RestartReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d("INFO", "SERVICE STOPS");
+        /*context.startService(new Intent(context, BluetoothService.class));*/
         context.startService(new Intent(context, BeaconingService.class));
     }
 }
