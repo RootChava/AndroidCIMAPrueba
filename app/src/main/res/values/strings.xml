@@ -25,6 +25,7 @@
     <string name="link_coyoacan">
         <a href ="https://g.co/kgs/NYMr9a">¿Qué está pasando aquí?</a>
     </string>
+    <string name="title">Notificación CDMX</string>
     <string name="reforma">Reforma</string>
     <string name="coyoacan">Coyoacán</string>
     <item name="menu_stop" type="id" />

@@ -2,11 +2,21 @@ package com.example.pruebable;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
@@ -15,6 +25,8 @@ import org.altbeacon.beacon.BeaconParser;
 import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -83,6 +95,7 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
         mBeaconManager.addRangeNotifier(this);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
         int i = 0;
@@ -90,17 +103,23 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
         if (beacons.size() > 0) {
             for (Beacon b : beacons) {
                 String UUID = b.getId1().toString();
-                /*String major = b.getId2().toString();
+                String major = b.getId2().toString();
                 String minor = b.getId3().toString();
                 String MAC = b.getBluetoothAddress();
+
+                Map<String, String> jsonBody = new HashMap<String, String>();
+                jsonBody.put("UUID", UUID);
+                jsonBody.put("major", major);
+                jsonBody.put("minor", minor);
+
                 String info = "UUID: " + UUID + ", Major: " + major + ", Minor: " + minor +
                         ", MAC: " + MAC;
-                Log.d("INFO","########## Beacon iBeacon detectado: " + info);*/
+                Log.d("INFO","########## Beacon iBeacon detectado: " + info);
                 if (UUID.equals("978ea1fa-ca7b-41ab-9100-446482bff79f")){
                     try {
                         Date fechaEncuentro = sdf.parse(sdf.format(new Date()));
                         if (map.get(b) == null) {
-                            mandarNotificacion(b,i);
+                            mandarNotificacion(b,i, jsonBody);
                             map.put(b,fechaEncuentro);
                             Log.d("INFO","########## Beacon nuevo detectado " + b.toString());
                             i += 1;
@@ -109,9 +128,9 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
                             long millis = (fechaActual.getTime()/1000)/60;
                             Date fechaGuardada = (Date)map.get(b);
                             long millisGuardada = (fechaGuardada.getTime()/1000)/60;
-                            if ((millis - millisGuardada) >= 30) {
+                            if ((millis - millisGuardada) >= 1) {
                                 Log.d("INFO","########## Beacon actualizado");
-                                mandarNotificacion(b,i);
+                                mandarNotificacion(b,i, jsonBody);
                                 map.replace(b,fechaActual);
                                 i += 1;
                             } else {
@@ -126,16 +145,33 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
         }
     }
 
-    public void mandarNotificacion(Beacon b, int idNot) {
-        switch (b.getId2().toString()) {
-            case "15":
-                notificationHelper.createNotification("CDMX BLE", "¡Bienvenid@ a Reforma!", idNot);
-                break;
-            case "3":
-                notificationHelper.createNotification("CDMX BLE", "¡Bienvenid@ a Coyoacán!", idNot);
-                break;
-            default:
-                break;
-        }
+    public void mandarNotificacion(final Beacon b, final int idNot, Map<String, String> jsonBody) {
+        String URL = "http://10.1.3.121:8080/mensaje";
+        Log.d("INFO","########## URL BODY: " + jsonBody.toString());
+        JsonObjectRequest jsonOblect = new JsonObjectRequest(Request.Method.POST, URL, new JSONObject(jsonBody), new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    notificationHelper.createNotification("CDMX BLE", response.getString("response"), 3);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("INFO","########## Respuesta de HTTP ERROR: " + error.toString());
+                Toast.makeText(getApplicationContext(), "Response:  " + error.toString(), Toast.LENGTH_SHORT).show();
+            }
+        }) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                final Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json; charset=utf-8");
+                headers.put("Authorization", "Basic " + "c2FnYXJAa2FydHBheS5jb206cnMwM2UxQUp5RnQzNkQ5NDBxbjNmUDgzNVE3STAyNzI=");//put your token here
+                return headers;
+            }
+        };
+        Volley.newRequestQueue(getApplicationContext()).add(jsonOblect);
     }
 }

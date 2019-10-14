@@ -29,8 +29,9 @@ public class NotificationHelper {
      */
     public void createNotification(String title, String message, int id) {
         Intent intent = new Intent(mContext , ViewGeneratorActivity.class);
-        intent.putExtra("majorMeraki",message);
-        intent.addFlags(Intent.);
+        intent.putExtra("majorMeraki",String.valueOf(id));
+        intent.putExtra("mensajeNotificacion", message);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent resultPendingIntent = PendingIntent.getActivity(mContext,
                 0 /* Request code */, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT); //FLAG_UPDATE_CURRENT
@@ -38,6 +39,7 @@ public class NotificationHelper {
         mBuilder = new NotificationCompat.Builder(mContext);
         mBuilder.setSmallIcon(R.drawable.ic_stat_rt);
         mBuilder.setContentTitle(title)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
                 .setContentText(message)
                 .setAutoCancel(false)
                 .setSound(Settings.System.DEFAULT_NOTIFICATION_URI)
