@@ -146,7 +146,8 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
     }
 
     public void mandarNotificacion(final Beacon b, final int idNot, Map<String, String> jsonBody) {
-        String URL = "http://10.1.3.121:8080/mensaje";
+        //String URL = "http://10.1.3.121:8080/mensaje";
+        String URL = "http://192.168.0.100:8090/mensaje";
         Log.d("INFO","########## URL BODY: " + jsonBody.toString());
         JsonObjectRequest jsonOblect = new JsonObjectRequest(Request.Method.POST, URL, new JSONObject(jsonBody), new Response.Listener<JSONObject>() {
             @Override
