@@ -44,11 +44,13 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
     private NotificationHelper notificationHelper;
     private Calendar cal;
     private SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-    private Map map = new HashMap();
+    private Map<Beacon, Date> seenBeacons = new HashMap();
 
     public BeaconingService() {
         super();
     }
+
+    int i = 0;
 
     /**
      * Métodos para servicio
@@ -98,7 +100,6 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
-        int i = 0;
         //Log.d("INFO", "########## Detección de beacon(s)");
         if (beacons.size() > 0) {
             for (Beacon b : beacons) {
@@ -114,27 +115,29 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
 
                 String info = "UUID: " + UUID + ", Major: " + major + ", Minor: " + minor +
                         ", MAC: " + MAC;
-                Log.d("INFO","########## Beacon iBeacon detectado: " + info);
+                //Log.d("INFO","########## Beacon iBeacon detectado: " + info);
                 if (UUID.equals("978ea1fa-ca7b-41ab-9100-446482bff79f")){
                     try {
                         Date fechaEncuentro = sdf.parse(sdf.format(new Date()));
-                        if (map.get(b) == null) {
+                        if (seenBeacons.get(b) == null) {
+                            seenBeacons.put(b,fechaEncuentro);
                             mandarNotificacion(b,i, jsonBody);
-                            map.put(b,fechaEncuentro);
-                            Log.d("INFO","########## Beacon nuevo detectado " + b.toString());
+                            Log.d("INFO","!!!!!!!!!!!!!!!!! " + b.getId2() + ", " + jsonBody.get("major"));
+                            //Log.d("INFO","########## Beacon nuevo detectado " + b.toString());
                             i += 1;
                         } else {
                             Date fechaActual = sdf.parse(sdf.format(new Date()));
                             long millis = (fechaActual.getTime()/1000)/60;
-                            Date fechaGuardada = (Date)map.get(b);
+                            Date fechaGuardada = (Date)seenBeacons.get(b);
+                            Log.d("INFO","########## BEACON YA EXISTENTE CON FECHA " + seenBeacons.get(b));
                             long millisGuardada = (fechaGuardada.getTime()/1000)/60;
-                            if ((millis - millisGuardada) >= 1) {
-                                Log.d("INFO","########## Beacon actualizado");
+                            if ((millis - millisGuardada) >= 2) {
+                                Log.d("INFO","########## BEACON ACTUALIZADOS");
                                 mandarNotificacion(b,i, jsonBody);
-                                map.replace(b,fechaActual);
+                                seenBeacons.replace(b,fechaActual);
                                 i += 1;
                             } else {
-                                Log.d("INFO","########## Beacon vigente " + b.toString() + ", tiempo restante: " + (millis - millisGuardada));
+                                //Log.d("INFO","########## Beacon vigente " + b.toString() + ", tiempo restante: " + (millis - millisGuardada));
                             }
                         }
                     } catch (ParseException e) {
@@ -148,11 +151,12 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
     public void mandarNotificacion(final Beacon b, final int idNot, Map<String, String> jsonBody) {
         //String URL = "http://10.1.3.121:8080/mensaje";
         String URL = "http://192.168.0.100:8090/mensaje";
-        Log.d("INFO","########## URL BODY: " + jsonBody.toString());
+        Log.d("INFO","########## BEACON NUEVO DETECTADO: " + jsonBody.toString());
         JsonObjectRequest jsonOblect = new JsonObjectRequest(Request.Method.POST, URL, new JSONObject(jsonBody), new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 try {
+                    Log.d("INFO","########## RESPUESTA: " + response.toString());
                     notificationHelper.createNotification("CDMX BLE", response.getString("response"), 3);
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -161,7 +165,7 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.d("INFO","########## Respuesta de HTTP ERROR: " + error.toString());
+                Log.d("INFO","########## ERROR HTTP: " + error.toString());
                 Toast.makeText(getApplicationContext(), "Response:  " + error.toString(), Toast.LENGTH_SHORT).show();
             }
         }) {

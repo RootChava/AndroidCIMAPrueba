@@ -17,12 +17,14 @@ public class ViewGeneratorActivity extends Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         Intent intent = getIntent();
         String id = intent.getStringExtra("majorMeraki");
         String mensaje = intent.getStringExtra("mensajeNotificacion");
-        Log.d("INFO","########## MENSAJE: " + id);
+        //Log.d("INFO","########## MENSAJE: " + id);
         if (id.contains("3")){
             setContentView(R.layout.meraki_one);
+            Log.d("INFO","******************************* MENSAJE: " + mensaje);
             TextView tv1 = findViewById(R.id.textView2);
             tv1.setText(mensaje);
         } else if(id.contains("15")){
@@ -31,6 +33,10 @@ public class ViewGeneratorActivity extends Activity {
             Log.d("INFO","########## Hubo un problema al generar la vista");
         }
     }
+
+
+
+
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event)  {
