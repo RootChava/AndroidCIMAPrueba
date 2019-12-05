@@ -27,24 +27,21 @@ public class NotificationHelper {
     /**
      * Creación y envío de notificación push
      */
-    public void createNotification(String title, String message, int id) {
+    public void createNotification(String title, String descripcion, String urlImagen, int id) {
         Intent intent =new Intent(mContext , ViewGeneratorActivity.class);
         Random rand = new Random();
         int n = rand.nextInt(1000);
         intent.putExtra("majorMeraki",String.valueOf(id));
-        intent.putExtra("mensajeNotificacion", message);
-        //intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK); //FLAG_ACTIVITY_NEW_TASK //FLAG_ACTIVITY_MULTIPLE_TASK
-        PendingIntent resultPendingIntent = PendingIntent.getActivity(mContext,
-                0 /* Request code */, intent,
-                n); //FLAG_UPDATE_CURRENT //FLAG_CANCEL_CURRENT
-        Log.d("INFO","Ojo aqui "+ message);
-        Log.d("INFO","Ojo aqui "+intent);
+        intent.putExtra("mensajeNotificacion", descripcion);
+        intent.putExtra("urlImagen", urlImagen);
+        PendingIntent resultPendingIntent =
+                PendingIntent.getActivity(mContext,0, intent, n);
         mBuilder = new NotificationCompat.Builder(mContext);
 
         mBuilder.setSmallIcon(R.drawable.ic_stat_rt);
         mBuilder.setContentTitle(title)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
-                .setContentText(message)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(descripcion))
+                .setContentText(descripcion)
                 .setAutoCancel(true)
                 .setSound(Settings.System.DEFAULT_NOTIFICATION_URI)
                 .setContentIntent(resultPendingIntent);
@@ -62,9 +59,6 @@ public class NotificationHelper {
             mNotificationManager.createNotificationChannel(notificationChannel);
         }
         assert mNotificationManager != null;
-       // mBuilder.setAutoCancel(true);
-        //Random rand = new Random();
-        //int n = rand.nextInt(1000);
         Log.d("INFO","Id Not: " + n);
         mNotificationManager.notify(n, mBuilder.build());
     }

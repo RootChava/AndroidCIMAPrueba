@@ -17,6 +17,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.constraints.Util;
 
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
@@ -40,7 +41,6 @@ import java.util.Map;
 public class BeaconingService extends Service implements BeaconConsumer, RangeNotifier {
 
     private BeaconManager mBeaconManager;
-    private final String iBeacon = "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24";
     private NotificationHelper notificationHelper;
     private Calendar cal;
     private SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
@@ -50,8 +50,6 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
         super();
     }
 
-    int i = 0;
-
     /**
      * Métodos para servicio
      */
@@ -60,7 +58,7 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
         notificationHelper = new NotificationHelper(this);
         mBeaconManager = BeaconManager.getInstanceForApplication(this);
         mBeaconManager.getBeaconParsers().add(new BeaconParser().
-                setBeaconLayout(iBeacon));
+                setBeaconLayout(Util.iBeacon));
         mBeaconManager.bind(this);
         return START_STICKY;
     }
@@ -85,7 +83,6 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
      */
     @Override
     public void onBeaconServiceConnect() {
-        Log.d("INFO", "########## Construyendo beacon");
         ArrayList<Identifier> identifiers = new ArrayList<>();
         identifiers.add(null);
         Region region = new Region("AllBeaconsRegion", identifiers);
@@ -100,42 +97,34 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void didRangeBeaconsInRegion(Collection<Beacon> beacons, Region region) {
-        //Log.d("INFO", "########## Detección de beacon(s)");
         if (beacons.size() > 0) {
             for (Beacon b : beacons) {
                 String UUID = b.getId1().toString();
                 String major = b.getId2().toString();
                 String minor = b.getId3().toString();
-                String MAC = b.getBluetoothAddress();
 
                 Map<String, String> jsonBody = new HashMap<String, String>();
-                jsonBody.put("UUID", UUID);
+                jsonBody.put("uuid", UUID);
                 jsonBody.put("major", major);
                 jsonBody.put("minor", minor);
 
-                String info = "UUID: " + UUID + ", Major: " + major + ", Minor: " + minor +
-                        ", MAC: " + MAC;
-                //Log.d("INFO","########## Beacon iBeacon detectado: " + info);
-                if (UUID.equals("978ea1fa-ca7b-41ab-9100-446482bff79f")){
+                if (UUID.equals(Util.UUID)){
                     try {
                         Date fechaEncuentro = sdf.parse(sdf.format(new Date()));
                         if (seenBeacons.get(b) == null) {
                             seenBeacons.put(b,fechaEncuentro);
-                            mandarNotificacion(b,i, jsonBody);
-                            Log.d("INFO","!!!!!!!!!!!!!!!!! " + b.getId2() + ", " + jsonBody.get("major"));
-                            //Log.d("INFO","########## Beacon nuevo detectado " + b.toString());
-                            i += 1;
+                            Log.d("INFO","########## NUEVO " + seenBeacons.get(b));
+                            mandarNotificacion(b, jsonBody);
                         } else {
                             Date fechaActual = sdf.parse(sdf.format(new Date()));
                             long millis = (fechaActual.getTime()/1000)/60;
                             Date fechaGuardada = (Date)seenBeacons.get(b);
                             Log.d("INFO","########## BEACON YA EXISTENTE CON FECHA " + seenBeacons.get(b));
                             long millisGuardada = (fechaGuardada.getTime()/1000)/60;
-                            if ((millis - millisGuardada) >= 2) {
+                            if ((millis - millisGuardada) >= 3) {
                                 Log.d("INFO","########## BEACON ACTUALIZADOS");
-                                mandarNotificacion(b,i, jsonBody);
+                                mandarNotificacion(b, jsonBody);
                                 seenBeacons.replace(b,fechaActual);
-                                i += 1;
                             } else {
                                 //Log.d("INFO","########## Beacon vigente " + b.toString() + ", tiempo restante: " + (millis - millisGuardada));
                             }
@@ -148,16 +137,16 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
         }
     }
 
-    public void mandarNotificacion(final Beacon b, final int idNot, Map<String, String> jsonBody) {
-        //String URL = "http://10.1.3.121:8080/mensaje";
-        String URL = "http://192.168.0.100:8090/mensaje";
+    public void mandarNotificacion(final Beacon b, Map<String, String> jsonBody) {
         Log.d("INFO","########## BEACON NUEVO DETECTADO: " + jsonBody.toString());
-        JsonObjectRequest jsonOblect = new JsonObjectRequest(Request.Method.POST, URL, new JSONObject(jsonBody), new Response.Listener<JSONObject>() {
+        //JsonObjectRequest jsonObject = new JsonObjectRequest(Request.Method.POST, Util.server, new JSONObject(jsonBody), new Response.Listener<JSONObject>() {
+        String url = Util.server;
+        JsonObjectRequest jsonObject = new JsonObjectRequest(Request.Method.POST, url, new JSONObject(jsonBody), new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 try {
                     Log.d("INFO","########## RESPUESTA: " + response.toString());
-                    notificationHelper.createNotification("CDMX BLE", response.getString("response"), 3);
+                    notificationHelper.createNotification("CDMX BLE", response.getString("descripcion"), response.getString("urlImagen"), 3);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -169,14 +158,39 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
                 Toast.makeText(getApplicationContext(), "Response:  " + error.toString(), Toast.LENGTH_SHORT).show();
             }
         }) {
-            @Override
+
+            /**@Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 final Map<String, String> headers = new HashMap<>();
                 headers.put("Content-Type", "application/json; charset=utf-8");
-                headers.put("Authorization", "Basic " + "c2FnYXJAa2FydHBheS5jb206cnMwM2UxQUp5RnQzNkQ5NDBxbjNmUDgzNVE3STAyNzI=");//put your token here
+                headers.put("Authorization", Util.serverToken);
                 return headers;
-            }
+            }**/
         };
-        Volley.newRequestQueue(getApplicationContext()).add(jsonOblect);
+        Volley.newRequestQueue(getApplicationContext()).add(jsonObject);
+    }
+
+    public void mandarNotificacionGet(final Beacon b, Map<String, String> jsonBody) {
+        Log.d("INFO","########## BEACON NUEVO DETECTADO: " + jsonBody.toString());
+        String url = Util.server + "getbeacondata?uuid=" + b.getId1() + "&major=" + b.getId2() + "&minor=" + b.getId3();
+        JsonObjectRequest jsonObject = new JsonObjectRequest(Request.Method.GET, url, new JSONObject(jsonBody), new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d("INFO","########## RESPUESTA: " + response.toString());
+                    notificationHelper.createNotification("CDMX BLE", response.getString("descripcion"), response.getString("urlImagen"), 3);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("INFO","########## ERROR HTTP: " + error.toString());
+                Toast.makeText(getApplicationContext(), "Response:  " + error.toString(), Toast.LENGTH_SHORT).show();
+            }
+        }) {
+        };
+        Volley.newRequestQueue(getApplicationContext()).add(jsonObject);
     }
 }

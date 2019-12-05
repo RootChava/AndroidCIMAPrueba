@@ -11,7 +11,6 @@
         android:layout_height="277dp"
         android:contentDescription="@string/reforma"
         android:scaleType="center"
-        android:src="@drawable/coyoacan"
         android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -21,15 +20,15 @@
         android:id="@+id/imageView4"
         android:layout_width="286dp"
         android:layout_height="76dp"
-        android:layout_marginStart="62dp"
-        android:layout_marginEnd="62dp"
-        android:layout_marginBottom="28dp"
+        android:layout_marginStart="55dp"
+        android:layout_marginEnd="65dp"
+        android:layout_marginBottom="44dp"
         android:contentDescription="@string/image_description"
         android:scaleType="fitStart"
         android:src="@drawable/logocdmx"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent" />
 
     <TextView

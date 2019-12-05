@@ -7,17 +7,21 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import android.view.View.OnClickListener;
 
 public class MainActivity extends AppCompatActivity {
     private Handler mHandler;
@@ -26,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private int bandera = 0; // 0: Notificación no lanzada, 1: Notificación lanzada
     private int banderaInit = 0;
     private int banderaPermisoUbicacion = 0;
+    private ImageButton imageButton;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -40,28 +45,42 @@ public class MainActivity extends AppCompatActivity {
             Log.d("INFO ","####### GPS no permitido");
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         } else {
-            if(areLocationServicesEnabled(this)) {
-                Log.d("INFO ","####### GPS activo, no se requieren acciones");
+            if (areLocationServicesEnabled(this)) {
+                Log.d("INFO ", "####### GPS activo, no se requieren acciones");
                 mHandler = new Handler();
                 if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
                     Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
                     finish();
                 }
                 intent = new Intent(this, BeaconingService.class);
-                if(!isMyServiceRunning(BeaconingService.class)) startService(intent);
+                if (!isMyServiceRunning(BeaconingService.class)) startService(intent);
                 /*intent = new Intent(this, RangingActivity.class);
                 startActivity(intent);*/
             } else {
-                Log.d("INFO ","####### SIN ACCESO AL GPS DEL DISPOSITIVO");
+                Log.d("INFO ", "####### SIN ACCESO AL GPS DEL DISPOSITIVO");
                 //Se ejecuta una notificación por razones desconocidas
                 // que cambia el valor de bandera a 1 y llega a resume
                 /*Regresa de la notificación espontánea y setea bandera a 0, bandera Init a 1*/
                 buildAlertMessageNoGps();
                 bandera = 1;
                 /*bandera = 1 -> resume*/
-
             }
         }
+
+        addListenerOnButton();
+
+
+    }
+
+    public void addListenerOnButton() {
+        imageButton = (ImageButton) findViewById(R.id.imageView11);
+        imageButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                Toast.makeText(MainActivity.this,
+                        "Escaneando BLE", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private boolean isMyServiceRunning(Class<?> serviceClass) {
