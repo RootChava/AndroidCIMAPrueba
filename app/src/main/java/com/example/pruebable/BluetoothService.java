@@ -98,7 +98,7 @@ public class BluetoothService extends Service {
                             for (int i = 0; i < uuids.length; i++ ){
                                 Log.d("INFO: UUIDS", uuids[i].toString());
                             }
-                            notificationHelper.createNotification("CIMA BLE Evento", "Mira estos eventos cerca de RootTechnologies","hhh",3);
+                            notificationHelper.createNotification("CIMA BLE Evento", "Mira estos eventos cerca de RootTechnologies","hhh");
                         }}, 15000);
                     break;
                 case "6C:94:F8:CF:48:31":
@@ -112,7 +112,7 @@ public class BluetoothService extends Service {
                             for (int i = 0; i < uuids.length; i++ ){
                                 Log.d("INFO: UUIDS", uuids[i].toString());
                             }
-                            notificationHelper.createNotification("CDMX BLE", "Mira estos eventos cerca de Reforma","fff",3);
+                            notificationHelper.createNotification("CDMX BLE", "Mira estos eventos cerca de Reforma","fff");
                         }}, 15000);
                     break;
                 default:

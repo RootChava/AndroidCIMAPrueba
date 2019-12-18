@@ -27,13 +27,13 @@ public class NotificationHelper {
     /**
      * Creación y envío de notificación push
      */
-    public void createNotification(String title, String descripcion, String urlImagen, int id) {
-        Intent intent =new Intent(mContext , ViewGeneratorActivity.class);
+    public void createNotification(String title, String descripcion, String urlImagen) {
+        Intent intent = new Intent(mContext , ViewGeneratorActivity.class);
         Random rand = new Random();
         int n = rand.nextInt(1000);
-        intent.putExtra("majorMeraki",String.valueOf(id));
         intent.putExtra("mensajeNotificacion", descripcion);
         intent.putExtra("urlImagen", urlImagen);
+        intent.putExtra("nombreLugar", title);
         PendingIntent resultPendingIntent =
                 PendingIntent.getActivity(mContext,0, intent, n);
         mBuilder = new NotificationCompat.Builder(mContext);

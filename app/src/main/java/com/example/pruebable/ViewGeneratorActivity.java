@@ -33,30 +33,25 @@ public class ViewGeneratorActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         Intent intent = getIntent();
-        String id = intent.getStringExtra("majorMeraki");
         String mensaje = intent.getStringExtra("mensajeNotificacion");
         String urlImagen = intent.getStringExtra("urlImagen");
-        //Log.d("INFO","########## MENSAJE: " + id);
-        if (id.contains("3")){
-            setContentView(R.layout.meraki_one);
-            Log.d("INFO","******************************* MENSAJE: " + mensaje);
-            TextView tv1 = findViewById(R.id.textView2);
-            String newImageUrl = null;
-            try {
-                newImageUrl = URLDecoder.decode(urlImagen, "UTF-8");
-                Log.d("INFO","******************************* NEW URL: " + newImageUrl);
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-            ImageView imageView = findViewById(R.id.imageView2);
-            new DownloadImageTask(imageView)
-                    .execute(newImageUrl);
-            tv1.setText(mensaje);
-        } else if(id.contains("15")){
-            setContentView(R.layout.meraki_two);
-        } else {
-            Log.d("INFO","########## Hubo un problema al generar la vista");
+        String nombreLugar = intent.getStringExtra("nombreLugar");
+        setContentView(R.layout.meraki_one);
+        Log.d("INFO","******************************* MENSAJE: " + mensaje);
+        TextView tv1 = findViewById(R.id.textView2);
+        TextView tv2 = findViewById(R.id.textView3);
+        String newImageUrl = null;
+        try {
+            newImageUrl = URLDecoder.decode(urlImagen, "UTF-8");
+            Log.d("INFO","******************************* NEW URL: " + newImageUrl);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
         }
+        ImageView imageView = findViewById(R.id.imageView2);
+        new DownloadImageTask(imageView)
+                .execute(newImageUrl);
+        tv1.setText(mensaje);
+        tv2.setText(nombreLugar);
     }
 
     @Override
@@ -90,6 +85,10 @@ public class ViewGeneratorActivity extends Activity {
         }
 
         protected void onPostExecute(Bitmap result) {
+            /*int dimensionInPixel = 1500;
+            bmImage.getLayoutParams().height = dimensionInPixel;
+            bmImage.getLayoutParams().width = dimensionInPixel;
+            bmImage.requestLayout();*/
             bmImage.setImageBitmap(result);
         }
     }

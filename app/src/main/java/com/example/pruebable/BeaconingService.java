@@ -65,6 +65,7 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
 
     @Override
     public void onDestroy() {
+        //mBeaconManager.unbind(this);
         super.onDestroy();
         Log.d("INFO", "########## Destruyendo servicio");
         /*Intent broadcastIntent = new Intent(this, RestartReceiver.class);
@@ -121,7 +122,7 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
                             Date fechaGuardada = (Date)seenBeacons.get(b);
                             Log.d("INFO","########## BEACON YA EXISTENTE CON FECHA " + seenBeacons.get(b));
                             long millisGuardada = (fechaGuardada.getTime()/1000)/60;
-                            if ((millis - millisGuardada) >= 3) {
+                            if ((millis - millisGuardada) >= 1) {
                                 Log.d("INFO","########## BEACON ACTUALIZADOS");
                                 mandarNotificacion(b, jsonBody);
                                 seenBeacons.replace(b,fechaActual);
@@ -146,7 +147,7 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
             public void onResponse(JSONObject response) {
                 try {
                     Log.d("INFO","########## RESPUESTA: " + response.toString());
-                    notificationHelper.createNotification("CDMX BLE", response.getString("descripcion"), response.getString("urlImagen"), 3);
+                    notificationHelper.createNotification( response.getString("nombre") + " - BLE", response.getString("descripcion"), response.getString("urlImagen"));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -159,13 +160,13 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
             }
         }) {
 
-            /**@Override
+            @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 final Map<String, String> headers = new HashMap<>();
                 headers.put("Content-Type", "application/json; charset=utf-8");
                 headers.put("Authorization", Util.serverToken);
                 return headers;
-            }**/
+            }
         };
         Volley.newRequestQueue(getApplicationContext()).add(jsonObject);
     }
@@ -178,7 +179,7 @@ public class BeaconingService extends Service implements BeaconConsumer, RangeNo
             public void onResponse(JSONObject response) {
                 try {
                     Log.d("INFO","########## RESPUESTA: " + response.toString());
-                    notificationHelper.createNotification("CDMX BLE", response.getString("descripcion"), response.getString("urlImagen"), 3);
+                    notificationHelper.createNotification("CDMX BLE", response.getString("descripcion"), response.getString("urlImagen"));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
